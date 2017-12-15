@@ -3,7 +3,6 @@ services:
   notebook:
     build: .
     volumes:
-      - .:/home/jovyan/jupyter
+      - .:/srv
     ports:
       - 8888:8888
-    command: start-notebook.sh --NotebookApp.token=

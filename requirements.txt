@@ -1,0 +1,6 @@
+keras
+pandas
+spacy
+tensorflow-gpu
+scikit-learn
+matplotlib
