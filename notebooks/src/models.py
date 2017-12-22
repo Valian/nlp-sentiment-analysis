@@ -26,7 +26,7 @@ class KerasModel(MachineLearningModel):
         self.model.save(filepath)
 
     def predict(self, input):
-
+        pass
 
     @classmethod
     def load(cls, filepath):

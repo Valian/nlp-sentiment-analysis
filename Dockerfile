@@ -25,6 +25,6 @@ RUN tar zxvf /tmp/cudnn-8.0-linux-x64-v6.0.tgz -C /tmp && \
     mv /tmp/cuda/include/* /usr/local/cuda-8.0/include && \
     mv /tmp/cuda/lib64/* /usr/local/cuda-8.0/lib64
 ENV LD_LIBRARY_PATH /usr/local/cuda-8.0/lib64:$LD_LIBRARY_PATH
-RUN pip install h5py tables
+RUN pip install h5py tables pytest
 
 CMD ["jupyter", "notebook", "--allow-root", "--ip", "0.0.0.0"]

@@ -1,3 +1,4 @@
 data
 notebooks
 dist
+.cache
