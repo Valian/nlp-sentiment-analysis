@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
 
 ENV PYTHON_PIP_VERSION 9.0.1
 
@@ -20,8 +20,8 @@ RUN pip install jupyter && \
 COPY requirements.txt /srv/
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-# we use CPU version in this image
-RUN pip install tensorflow
+# we use GPU version in this image
+RUN pip install tensorflow-gpu
 
 COPY entrypoint.bash /entrypoint.bash
 ENTRYPOINT ["/entrypoint.bash"]

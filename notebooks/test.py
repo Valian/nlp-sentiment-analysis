@@ -1,15 +1,28 @@
-from src.data import FineFoodReviewsDataSet
-from src.middleware import BinarizeLabelsMiddleware, ClearTextMiddleware, WordsToNlpIndexMiddleware, \
-    NlpIndexToInputVectorMiddleware, CacheMiddleware
-import spacy
+from random import random
 
-print("Loading spacy...")
+from src.pipeline import CachePipeline, PipelineFunctionStart, ProcessPipelinePart
+import pandas as pd
 
 
+def print_values(*args, **kwargs):
+    print("Inside print values", args, kwargs)
+    return pd.Series([1, 2, 3])
 
-data_stream = dataset.to_generator(batch_size=3)
-for i, (data, labels) in zip(range(2), data_stream):
+
+class TestPipeline(ProcessPipelinePart):
+
+    def process_value(self, data):
+        print("inside processing value ", data)
+        return data * 3
+
+
+def cached_value(data):
     print(data)
+    return data
+
+pipeline = PipelineFunctionStart(
+    method=print_values, pipeline=CachePipeline(
+        '/tmp', invalidating_param='test', pipeline=TestPipeline()))
+pipeline.get_result(test=slice(5))
 
 
-print(dataset.get_settings_hash().hexdigest())

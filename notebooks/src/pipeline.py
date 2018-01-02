@@ -53,7 +53,10 @@ class ProcessPipelinePart(PipelinePart):
         return wrapper
 
     def process(self, data):
-        raise NotImplementedError()
+        return data.apply(self.process_value)
+
+    def process_value(self, value):
+        return value
 
 
 class PipelineStart(PipelinePart):
@@ -65,7 +68,7 @@ class PipelineStart(PipelinePart):
     def get_initial_data(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def process(self, *args, **kwargs):
+    def get_result(self, *args, **kwargs):
         return self._handler(*args, **kwargs)
 
     def create_pipeline(self, handler=None):
@@ -83,7 +86,7 @@ class PipelineStart(PipelinePart):
 
 class PipelineFunctionStart(PipelineStart):
 
-    def __init__(self, method, pipeline):
+    def __init__(self, method, pipeline=None):
         super().__init__(pipeline)
         self.method = method
 
@@ -93,7 +96,7 @@ class PipelineFunctionStart(PipelineStart):
 
 class PipelineValueStart(PipelineStart):
 
-    def __init__(self, value, pipeline):
+    def __init__(self, value, pipeline=None):
         super().__init__(pipeline)
         self.value = value
 
@@ -133,11 +136,8 @@ class BinarizeLabelsPipeline(ProcessPipelinePart):
     def __init__(self, threshold):
         self.threshold = threshold
 
-    def process(self, data):
-        return data.apply(self.binarize_label)
-
-    def binarize_label(self, score):
-        return int(score > self.threshold)
+    def process_value(self, value):
+        return int(value > self.threshold)
 
     def get_settings(self):
         return {'threshold': self.threshold}
@@ -145,13 +145,10 @@ class BinarizeLabelsPipeline(ProcessPipelinePart):
 
 class ClearTextPipeline(ProcessPipelinePart):
 
-    def process(self, data):
-        return data.apply(self.clear_function)
+    only_alpha_regex = re.compile(r'[^\w+ ]')
 
-    @staticmethod
-    def clear_function(text):
-        only_alpha_regex = re.compile(r'[^\w+ ]')
-        return only_alpha_regex.sub('', text)
+    def process_value(self, value):
+        return self.only_alpha_regex.sub('', value)
 
 
 class WordsToNlpIndexPipeline(ProcessPipelinePart):
@@ -159,50 +156,42 @@ class WordsToNlpIndexPipeline(ProcessPipelinePart):
     def __init__(self, nlp):
         self.nlp = nlp
 
-    def process(self, data):
-        return data.apply(self.text_to_tokens)
-
-    def text_to_tokens(self, text):
-        processed_text = self.nlp(text)
+    def process_value(self, value):
+        processed_text = self.nlp(value)
         tokens = [w.lex_id for w in processed_text if (w.is_stop is False and str(w).isalnum())]
         return tokens
 
 
 class CachePipeline(PipelinePart):
 
-    def __init__(self, cache_path, pipeline: PipelineBase, invalidating_param=None):
+    def __init__(self, cache_path, pipeline: PipelineBase):
         self.cache_path = cache_path
         self.pipeline = pipeline
-        self.invalidating_param = invalidating_param
-        self.data = {}
+        self.data = None
 
     def create_pipeline(self, handler):
         settings_hash = self.pipeline.get_settings_hash()
 
         def wrapper(*args, **kwargs):
-            file_hash = self.calculate_file_hash(settings_hash, **kwargs)
-            cache_filename = self.get_filename(file_hash)
+            batch_slice = kwargs.pop('batch_slice', None)
+            cache_filename = self.get_filename(settings_hash)
             self.ensure_data_loaded(cache_filename, handler, *args, **kwargs)
-            return self.data[cache_filename]
+            if batch_slice:
+                return {k: v[batch_slice] for k, v in self.data.items()}
+            else:
+                return self.data
         return wrapper
 
-    def calculate_file_hash(self, settings_hash, **kwargs):
-        params = {}
-        if self.invalidating_param:
-            params = {self.invalidating_param: kwargs.get(self.invalidating_param, None)}
-        args_hash = get_hash_of_dict(params)
-        settings_hash.update(args_hash.digest())
-        return settings_hash
-
     def ensure_data_loaded(self, cache_filename, handler, *args, **kwargs):
-        if cache_filename not in self.data:
+        if self.data is None:
             try:
-                self.data[cache_filename] = self.load_data_from_file(cache_filename)
+                self.data = self.load_data_from_file(cache_filename)
                 print("Data loaded from {}".format(cache_filename))
             except Exception:
                 print("No cache found, generating data...")
-                self.data[cache_filename] = handler(*args, **kwargs)
-                self.save_data_to_file(self.data[cache_filename], cache_filename)
+                handler = self.pipeline.create_pipeline(handler)
+                self.data = handler(*args, **kwargs)
+                self.save_data_to_file(self.data, cache_filename)
                 print("Data generated and cached in {}".format(cache_filename))
 
     def get_filename(self, hash):
@@ -230,8 +219,7 @@ class CachePipeline(PipelinePart):
 
     def get_settings(self):
         return {
-            'cache_path': self.cache_path,
-            'param': self.invalidating_param
+            'cache_path': self.cache_path
         }
 
 
@@ -245,18 +233,18 @@ class NlpIndexToInputVectorPipeline(ProcessPipelinePart):
         # here because it loads whole tensorflow
         from keras.preprocessing import sequence
         word_vectors = [self.sentence_to_vectors(sentence) for sentence in data]
-        padded_word_wectors = sequence.pad_sequences(word_vectors, maxlen=self.padding_length, dtype='float32')
-        return padded_word_wectors
+        word_vectors = sequence.pad_sequences(word_vectors, maxlen=self.padding_length, dtype='float32')
+        return word_vectors
+
+    def sentence_to_vectors(self, sentence):
+        word_vectors = [self.word_to_vector(word) for word in sentence]
+        return [word_vector for word_vector in word_vectors if isinstance(word_vector, np.ndarray)]
 
     def word_to_vector(self, word):
         try:
             return self.nlp.vocab.vectors.data[word]
         except IndexError:
             return None
-
-    def sentence_to_vectors(self, sentence):
-        word_vectors = [self.word_to_vector(word) for word in sentence]
-        return [word_vector for word_vector in word_vectors if isinstance(word_vector, np.ndarray)]
 
     def get_settings(self):
         return {'padding_length': self.padding_length}

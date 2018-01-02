@@ -22,13 +22,13 @@ class ProvidedDataPipeline(PipelineStart):
 
 def test_pipeline_start():
     calculator = ProvidedDataPipeline(5)
-    result = calculator.process()
+    result = calculator.get_result()
     assert result == 5
 
 
 def test_basic_pipeline():
     calculator = ProvidedDataPipeline(5, pipeline=Multiply(2))
-    result = calculator.process()
+    result = calculator.get_result()
     assert result == 10
 
 
@@ -36,5 +36,5 @@ def test_split_pipeline():
     result = ProvidedDataPipeline({'a': 1, 'b': 10}, pipeline=SplitPipeline({
         'a': Multiply(5),
         'b': Multiply(0.5)
-    })).process()
+    })).get_result()
     assert result == {'a': 5, 'b': 5}

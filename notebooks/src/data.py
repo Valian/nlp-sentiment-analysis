@@ -1,4 +1,3 @@
-import hashlib
 import math
 import sqlite3
 
@@ -29,7 +28,7 @@ class DataSet(object):
     def size(self):
         raise NotImplementedError()
 
-    def load_data(self, batch_slice=None):
+    def load_data(self):
         raise NotImplementedError()
 
     def __getattr__(self, item):
@@ -56,20 +55,16 @@ class FineFoodReviewsDataSet(DataSet):
         test_data._data = test
         return train_data, test_data
 
-    def load_data(self, batch_slice=None):
+    def load_data(self):
         if not self._data:
             self._data = self._load_data()
-        batch_data = self._data
-        if batch_slice:
-            batch_data = self._data[batch_slice]
         return {
-            'text': batch_data['text'],
-            'scores': batch_data['scores']
+            'text': self._data['text'],
+            'scores': self._data['scores']
         }
 
     def _load_data(self):
         path = self.settings['path']
-        limit = self.settings.get('limit', -1)
         text_column = self.settings.get('text_column', 'Text')
         connection = sqlite3.connect(path)
         query = """
@@ -77,8 +72,6 @@ class FineFoodReviewsDataSet(DataSet):
             FROM Reviews
             WHERE Score != 3
             """.format(text_column)
-        if limit > 0:
-            query += " LIMIT {}".format(limit)
         return pd.read_sql_query(query, connection)
 
 
@@ -90,15 +83,12 @@ class IMDBDataSet(DataSet):
             self._data = self._load_data()
         return len(self._data)
 
-    def load_data(self, batch_slice=None):
-        if not self._data:
+    def load_data(self):
+        if self._data is None:
             self._data = self._load_data()
-        batch_data = self._data
-        if batch_slice:
-            batch_data = self._data[batch_slice]
         return {
-            'text': batch_data['text'],
-            'scores': batch_data['scores']
+            'text': self._data['text'],
+            'scores': self._data['scores']
         }
 
     def _load_data(self):
@@ -132,7 +122,8 @@ class DataSetProcessingPipeline(pipeline.PipelineStart):
             current_batch_number = 0
             while True:
                 batch_slice = get_batch_slice(self.dataset.size, batch_size, current_batch_number)
-                yield self.process(batch_slice=batch_slice)
+                data = self.get_result(batch_slice=batch_slice)
+                yield data['text'], data['scores']
                 current_batch_number += 1
         number_of_batches = math.ceil(self.dataset.size / batch_size)
         return number_of_batches, generator()

@@ -1,0 +1,10 @@
+keras
+pandas
+scikit-learn
+matplotlib
+h5py
+tables
+pytest
+spacy
+
+# tensorflow are installed in dockerfile to utilize caching

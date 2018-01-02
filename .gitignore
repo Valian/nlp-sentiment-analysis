@@ -6,4 +6,5 @@ cudnn-8.0-linux-x64-v6.0.tgz
 nvidia-docker-compose.yml
 dist
 data
+spacy
 .cache

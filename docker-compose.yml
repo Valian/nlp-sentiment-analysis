@@ -1,8 +1,1 @@
-version: '2'
-services:
-  notebook:
-    build: .
-    volumes:
-      - .:/srv
-    ports:
-      - 8888:8888
+docker-compose.gpu.yml

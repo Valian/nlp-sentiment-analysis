@@ -1,4 +1,5 @@
 data
 notebooks
 dist
+spacy
 .cache
