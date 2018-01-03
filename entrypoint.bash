@@ -7,6 +7,7 @@ if [ ! -f '/usr/local/lib/python3.5/dist-packages/en_vectors_web_lg/__init__.py'
     python -m spacy download en_vectors_web_lg
 fi
 
+
 mkdir -p dist/data dist/models
 
 exec $@

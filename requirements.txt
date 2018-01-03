@@ -7,21 +7,27 @@
 attrs==17.3.0             # via pytest
 certifi==2017.11.5        # via requests
 chardet==3.0.4            # via requests
+click==6.7                # via flask
 cycler==0.10.0            # via matplotlib
 cymem==1.31.2             # via preshed, spacy, thinc
 cytoolz==0.8.2            # via thinc
 dill==0.2.7.1             # via spacy, thinc
+flask==0.12.2
 ftfy==4.4.3               # via spacy
+gunicorn==19.7.1
 h5py==2.7.1
 html5lib==1.0.1           # via ftfy
 idna==2.6                 # via requests
+itsdangerous==0.24        # via flask
+jinja2==2.10              # via flask
 keras==2.1.2
+markupsafe==1.0           # via jinja2
 matplotlib==2.1.1
 msgpack-numpy==0.4.1      # via spacy, thinc
 msgpack-python==0.4.8     # via msgpack-numpy, spacy, thinc
 murmurhash==0.28.0        # via spacy, thinc
 numexpr==2.6.4            # via tables
-numpy==1.13.3             # via h5py, keras, matplotlib, msgpack-numpy, numexpr, pandas, scipy, spacy, tables, thinc
+numpy==1.13.3             # via h5py, keras, matplotlib, msgpack-numpy, numexpr, pandas, scipy, sklearn-pandas, spacy, tables, thinc
 pandas==0.21.1
 pathlib==1.0.1            # via spacy, thinc
 plac==0.9.6               # via spacy, thinc
@@ -36,8 +42,9 @@ pyyaml==3.12              # via keras
 regex==2017.4.5           # via spacy
 requests==2.18.4          # via spacy
 scikit-learn==0.19.1
-scipy==1.0.0              # via keras
+scipy==1.0.0              # via keras, sklearn-pandas
 six==1.11.0               # via cycler, h5py, html5lib, keras, matplotlib, pytest, python-dateutil, spacy, tables, thinc
+sklearn-pandas==1.6.0
 spacy==2.0.5
 tables==3.4.2
 termcolor==1.1.0          # via thinc
@@ -48,5 +55,5 @@ ujson==1.35               # via spacy
 urllib3==1.22             # via requests
 wcwidth==0.1.7            # via ftfy
 webencodings==0.5.1       # via html5lib
+werkzeug==0.14.1          # via flask
 wrapt==1.10.11            # via thinc
-

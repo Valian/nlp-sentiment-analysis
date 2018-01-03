@@ -1,0 +1,68 @@
+import re
+
+import numpy as np
+
+
+class BaseTransformer(object):
+    
+    def fit(self, X, Y):
+        return self
+
+    def transform(self, X, Y=None):
+        return X
+
+    def fit_transform(self, X, Y=None):
+        self.fit(X, Y)
+        return self.transform(X, Y)
+    
+    
+class RowTransformer(BaseTransformer):
+    
+    def transform(self, X, Y=None):
+        return np.array(tuple(self.transform_value(X[i]) for i in range(X.shape[0])), dtype=X.dtype)
+    
+    def transform_value(self, value):
+        return value
+    
+
+class ClearTextTransformer(RowTransformer):
+    
+    only_alpha_regex = re.compile(r'[^\w+ ]')
+    
+    def transform_value(self, value):
+        return self.only_alpha_regex.sub('', value)
+    
+
+class WordsToNlpIndexPipeline(RowTransformer):
+
+    def __init__(self, nlp):
+        self.nlp = nlp
+
+    def transform_value(self, value):
+        processed_text = self.nlp(value)
+        tokens = [w.lex_id for w in processed_text if (w.is_stop is False and str(w).isalnum())]
+        return np.array(tokens)
+    
+
+class NlpIndexToInputVectorPipeline(BaseTransformer):
+
+    def __init__(self, nlp, padding_length):
+        self.nlp = nlp
+        self.padding_length = padding_length
+
+    def transform(self, X, y=None):
+        # here because it loads whole tensorflow
+        from keras.preprocessing import sequence
+        word_vectors = [self.sentence_to_vectors(sentence) for sentence in X]
+        word_vectors = sequence.pad_sequences(word_vectors, maxlen=self.padding_length, dtype='float32')
+        return word_vectors
+
+    def sentence_to_vectors(self, sentence):
+        word_vectors = [self.word_to_vector(word) for word in sentence]
+        return [word_vector for word_vector in word_vectors if isinstance(word_vector, np.ndarray)]
+
+    def word_to_vector(self, word):
+        try:
+            return self.nlp.vocab.vectors.data[word]
+        except IndexError:
+            return None
