@@ -3,8 +3,8 @@ import copy
 import math
 
 import numpy as np
+from keras.utils import to_categorical
 from keras.wrappers.scikit_learn import KerasClassifier
-from sklearn.model_selection import train_test_split
 
 
 class KerasBatchClassifier(KerasClassifier):
@@ -17,10 +17,10 @@ class KerasBatchClassifier(KerasClassifier):
         self.preprocess_pipeline = preprocess_pipeline
         self.n_classes_ = 2
         self.classes_ = np.array([0, 1])
-        
 
-    def fit(self, X, y, **kwargs):
-        from keras.models import Sequential 
+    def fit(self, X, y, train_indices=None, test_indices=None, **kwargs):
+        from keras.models import Sequential
+
         # taken from keras.wrappers.scikit_learn.KerasClassifier.fit ################################################
         y = np.array(y)
         if self.build_fn is None:
@@ -42,17 +42,15 @@ class KerasBatchClassifier(KerasClassifier):
         fit_args.update(kwargs)
         #############################################################################################################
         
-        validation_split = self.sk_params["validation_split"]
         batch_size = self.sk_params["batch_size"]
-        if validation_split:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=validation_split)
-            train_generator = self.batch_generator(X_train, y_train, batch_size=batch_size)
-            test_generator = self.batch_generator(X_test, y_test, batch_size=batch_size)
+        if test_indices is not None and train_indices is not None:
+            train_generator = self.batch_generator(X[train_indices], y[train_indices], batch_size=batch_size)
+            test_generator = self.batch_generator(X[test_indices], y[test_indices], batch_size=batch_size)
             self.__history = self.model.fit_generator(
                 generator=train_generator,
                 validation_data=test_generator,
-                steps_per_epoch=math.ceail(len(X_train) / batch_size),
-                validation_steps=math.ceil(len(X_test) / batch_size),
+                steps_per_epoch=math.ceil(len(train_indices) / batch_size),
+                validation_steps=math.ceil(len(test_indices) / batch_size),
                 **fit_args)
         else:
             train_generator = self.batch_generator(X, y, batch_size=batch_size)
@@ -66,17 +64,17 @@ class KerasBatchClassifier(KerasClassifier):
     def score(self, x, y, **kwargs):
         if self.preprocess_pipeline:
             x = self.preprocess_pipeline.transform(x)
-        return super(KerasBatchClassifier, self).score(x, y, **kwargs)
+        return super().score(x, y, **kwargs)
         
     def predict_proba(self, x, **kwargs):
         if self.preprocess_pipeline:
             x = self.preprocess_pipeline.transform(x)
-        return super(KerasBatchClassifier, self).predict_proba(x, **kwargs)
+        return super().predict_proba(x, **kwargs)
     
     def predict(self, x, **kwargs):
         if self.preprocess_pipeline:
             x = self.preprocess_pipeline.transform(x)
-        return super(KerasBatchClassifier, self).predict(x, **kwargs)        
+        return super().predict(x, **kwargs)        
 
     def batch_generator(self, x, y, batch_size=128):
         current_batch_number = 0        

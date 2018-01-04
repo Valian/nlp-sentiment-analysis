@@ -26,25 +26,31 @@ class RowTransformer(BaseTransformer):
     
 
 class ClearTextTransformer(RowTransformer):
-    
-    only_alpha_regex = re.compile(r'[^\w+ ]')
+
+    remove_html = re.compile(r"<[^>]*>")
+    unwanted_characters = re.compile(r"[^\w+ !?']")
+    merge_whitespaces = re.compile(r"\s\s+")
     
     def transform_value(self, value):
-        return self.only_alpha_regex.sub('', value)
+        value = self.remove_html.sub(' ', value)
+        value = self.unwanted_characters.sub(' ', value)
+        value = self.merge_whitespaces.sub(' ', value)
+        return value.lower()
     
 
-class WordsToNlpIndexPipeline(RowTransformer):
+class WordsToNlpIndexTransformer(RowTransformer):
 
-    def __init__(self, nlp):
+    def __init__(self, nlp, remove_stop=False):
+        self.remove_stop = remove_stop
         self.nlp = nlp
 
     def transform_value(self, value):
         processed_text = self.nlp(value)
-        tokens = [w.lex_id for w in processed_text if (w.is_stop is False and str(w).isalnum())]
+        tokens = [w.lex_id for w in processed_text if ((not w.is_stop or not self.remove_stop) and w.is_alpha)]
         return np.array(tokens)
-    
 
-class NlpIndexToInputVectorPipeline(BaseTransformer):
+
+class NlpIndexToInputVectorTransformer(BaseTransformer):
 
     def __init__(self, nlp, padding_length):
         self.nlp = nlp
@@ -53,16 +59,13 @@ class NlpIndexToInputVectorPipeline(BaseTransformer):
     def transform(self, X, y=None):
         # here because it loads whole tensorflow
         from keras.preprocessing import sequence
-        word_vectors = [self.sentence_to_vectors(sentence) for sentence in X]
+        word_vectors = [list(self.sentence_to_vectors(sentence)) for sentence in X]
         word_vectors = sequence.pad_sequences(word_vectors, maxlen=self.padding_length, dtype='float32')
         return word_vectors
 
     def sentence_to_vectors(self, sentence):
-        word_vectors = [self.word_to_vector(word) for word in sentence]
-        return [word_vector for word_vector in word_vectors if isinstance(word_vector, np.ndarray)]
-
-    def word_to_vector(self, word):
-        try:
-            return self.nlp.vocab.vectors.data[word]
-        except IndexError:
-            return None
+        for word in sentence:
+            try:
+                yield self.nlp.vocab.vectors.data[word]
+            except (IndexError, KeyError):
+                pass
