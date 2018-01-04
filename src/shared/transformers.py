@@ -36,7 +36,16 @@ class ClearTextTransformer(RowTransformer):
         value = self.unwanted_characters.sub(' ', value)
         value = self.merge_whitespaces.sub(' ', value)
         return value.lower()
-    
+
+
+class NLPVectorTransformer(RowTransformer):
+
+    def __init__(self, nlp):
+        self.nlp = nlp
+
+    def transform_value(self, value):
+        return self.nlp(value).vector
+
 
 class WordsToNlpIndexTransformer(RowTransformer):
 

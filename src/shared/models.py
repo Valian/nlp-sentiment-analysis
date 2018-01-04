@@ -4,6 +4,7 @@ from keras.layers import Dense, Conv1D, BatchNormalization, GlobalMaxPooling1D, 
 from keras.models import Sequential, load_model, save_model
 from keras.regularizers import l2
 from sklearn import pipeline
+from sklearn.externals import joblib
 
 from shared import transformers
 from shared.common import get_hash_of_dict
@@ -14,8 +15,6 @@ DEFAULT_MODEL_DIRECTORY = '../dist/models'
 
 
 class Model(object):
-
-    NAME = 'undefined'
 
     def __init__(self, dataset_id, **model_params):
         self.dataset_id = dataset_id
@@ -36,9 +35,20 @@ class Model(object):
         raise NotImplementedError()
 
     @property
+    def file_ext(self):
+        raise NotImplementedError()
+
+    @property
+    def name(self):
+        try:
+            return getattr(self, 'NAME')
+        except AttributeError:
+            raise NotImplementedError("You need to define name of a model")
+
+    @property
     def filename(self):
         h = get_hash_of_dict(self.model_params)
-        return '{}_{}_{}.h5'.format(self.NAME, self.dataset_id, h.hexdigest()[:8])
+        return '{}_{}_{}.{}'.format(self.name, self.dataset_id, h.hexdigest()[:8], self.file_ext)
 
     def load(self, directory=DEFAULT_MODEL_DIRECTORY):
         raise NotImplementedError()
@@ -53,6 +63,60 @@ class Model(object):
         raise NotImplementedError()
 
 
+class SpacyModel(Model):
+
+    def __init__(self, nlp, dataset_id, **model_params):
+        self.nlp = nlp
+        super().__init__(dataset_id, **model_params)
+
+    @property
+    def file_ext(self):
+        return 'pkl'
+
+    @property
+    def model(self):
+        if self._pipeline is None:
+            raise RuntimeError("You must load model first!")
+        return self._pipeline.steps[-1][1]
+
+    def train(self, X, y):
+        pipe = self.get_pipeline()
+        fitted = pipe.fit(X, y)
+        self._pipeline = fitted
+        return self._pipeline
+
+    def save(self, directory=DEFAULT_MODEL_DIRECTORY):
+        filepath = os.path.join(directory, self.filename)
+        joblib.dump(self.model, filepath)
+
+    def load(self, directory=DEFAULT_MODEL_DIRECTORY):
+        filepath = os.path.join(directory, self.filename)
+        model = joblib.load(self.model, filepath)
+        self._pipeline = self.get_pipeline(model)
+        return self
+
+    def summary(self):
+        return str(self.model)
+
+    def get_pipeline(self, model=None):
+        return pipeline.Pipeline([
+            ('clear', transformers.ClearTextTransformer()),
+            ('nlp', transformers.NLPVectorTransformer(self.nlp)),
+            ('model', model or self.create_model())
+        ])
+
+    def create_model(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def from_sklearn_model(cls, model_class):
+        name = "Spacy{}Model".format(model_class.__name__)
+        return type(name, bases=(cls,), dict={
+            'create_model': model_class,
+            'NAME': model_class.__name__.lower()
+        })
+
+
 class KerasModel(Model):
 
     NAME = 'keras'
@@ -64,6 +128,10 @@ class KerasModel(Model):
         self.nlp = nlp
         self.max_words_in_sentence = model_params['max_words_in_sentence']
         super().__init__(dataset_id, **model_params)
+
+    @property
+    def file_ext(self):
+        return 'h5'
 
     @property
     def model(self):
