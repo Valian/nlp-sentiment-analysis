@@ -1,14 +1,32 @@
 import logging
 
-from flask import Flask, jsonify, request
+import en_vectors_web_lg
+import numpy as np
+from flask import Flask, jsonify, request, g
+
+from shared.models import KerasModel
 
 
 logger = logging.getLogger(__name__)
 
 
+def get_nlp():
+    nlp = getattr(g, '_nlp', None)
+    if nlp is None:
+        nlp = g._nlp = en_vectors_web_lg.load()
+    return nlp
+
+
 def score_text():
-    text = request.json['text']
-    prediction = 0.5
+    text = "disgusting smelly and totally bad"  # request.json['text']
+    nlp = get_nlp()
+    model = KerasModel(
+        nlp, 'food_text_all',
+        max_words_in_sentence=200,
+        epochs=5)
+    model.load()
+    samples = np.array([text], dtype='object')
+    prediction = model.predict_proba(samples)[:, 1][0]
     return jsonify(score=float(prediction))
 
 
@@ -18,6 +36,7 @@ def create_app(environment=None):
 
     init_logging(app.config)
 
+    app.add_url_rule('/', 'test', score_text)
     app.add_url_rule('/score', 'score_text', score_text, methods=['POST'])
 
     return app

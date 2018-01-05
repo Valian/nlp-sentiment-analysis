@@ -102,3 +102,7 @@ class KerasBatchClassifier(KerasClassifier):
     @property
     def history(self):
         return self.__history
+
+    def transform(self, X, y=None):
+        """To support preprocessing"""
+        return X

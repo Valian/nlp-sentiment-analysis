@@ -1,5 +1,6 @@
 import re
 
+import h5py
 import numpy as np
 
 
@@ -17,15 +18,19 @@ class BaseTransformer(object):
     
     
 class RowTransformer(BaseTransformer):
-    
+
+    OVERRIDE_ARRAY_TYPE = None
+
     def transform(self, X, Y=None):
-        return np.array(tuple(self.transform_value(X[i]) for i in range(X.shape[0])), dtype=X.dtype)
+        return np.array(tuple(self.transform_value(X[i]) for i in range(X.shape[0])), dtype=self.OVERRIDE_ARRAY_TYPE)
     
     def transform_value(self, value):
         return value
     
 
 class ClearTextTransformer(RowTransformer):
+
+    OVERRIDE_ARRAY_TYPE = 'object'
 
     remove_html = re.compile(r"<[^>]*>")
     unwanted_characters = re.compile(r"[^\w+ !?']")
@@ -48,6 +53,8 @@ class NLPVectorTransformer(RowTransformer):
 
 
 class WordsToNlpIndexTransformer(RowTransformer):
+
+    OVERRIDE_ARRAY_TYPE = h5py.special_dtype(vlen=np.dtype('int32'))
 
     def __init__(self, nlp, remove_stop=False):
         self.remove_stop = remove_stop

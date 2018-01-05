@@ -9,3 +9,14 @@ services:
       - ./spacy:/usr/local/lib/python3.5/dist-packages/en_vectors_web_lg
     ports:
       - 8888:8888
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile-gpu
+    volumes:
+      - .:/srv
+      - ./spacy:/usr/local/lib/python3.5/dist-packages/en_vectors_web_lg
+    command: python src/app.py
+    ports:
+      - 5000:5000

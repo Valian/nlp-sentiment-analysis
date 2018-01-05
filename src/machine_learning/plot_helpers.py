@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import itertools
 import numpy as np
 import pandas as pd
+from IPython.core.display import display_markdown, display
 
 
 def plot_confusion_matrix(cm, classes,
@@ -59,3 +60,36 @@ def pandas_settings(**settings):
                     pd.set_option(k, v)
         return inner
     return decorator
+
+
+def describe_data(X, y):
+    data = pd.DataFrame({'X': pd.Series(X), 'y': pd.Series(y[:, 0])})
+
+    display_markdown("### Data sample", raw=True)
+    display(data.head(10))
+
+    display_markdown('#### Text stats', raw=True)
+    display(data.X.describe())
+
+    display_markdown('#### Words length stats', raw=True)
+    display(data.X.apply(lambda w: len(w.split())).describe())
+
+    display_markdown('#### Labels stats', raw=True)
+    display(data.y.describe())
+
+    display_markdown('#### Labels counts', raw=True)
+    display(data.y.value_counts())
+    display(data.y.value_counts(normalize=True))
+
+
+def display_example_predictions(model, samples):
+    display_markdown("#### Predicted scores", raw=True)
+
+    if not isinstance(samples, np.ndarray):
+        samples = np.array(samples, dtype='object')
+
+    with pd.option_context("display.max_colwidth", -1):
+        display(pd.DataFrame({
+            "text": pd.Series(samples),
+            "score": pd.Series(model.predict_proba(samples)[:, 1].reshape(len(samples))),
+        }))

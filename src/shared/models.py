@@ -5,13 +5,20 @@ from keras.models import Sequential, load_model, save_model
 from keras.regularizers import l2
 from sklearn import pipeline
 from sklearn.externals import joblib
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression
 
 from shared import transformers
 from shared.common import get_hash_of_dict
 from shared.batch_classifier import KerasBatchClassifier
 
-
-DEFAULT_MODEL_DIRECTORY = '../dist/models'
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+DEFAULT_MODEL_DIRECTORY = os.path.realpath(os.path.join(CURRENT_DIR, '../../dist/models'))
 
 
 class Model(object):
@@ -22,21 +29,19 @@ class Model(object):
         self._pipeline = None
 
     def __getattr__(self, item):
-        if self._pipeline is None:
-            raise RuntimeError("You must load model first!")
         return getattr(self._pipeline, item)
-
-    @property
-    def loaded(self):
-        return self._pipeline is not None
-
-    @property
-    def model(self):
-        raise NotImplementedError()
 
     @property
     def file_ext(self):
         raise NotImplementedError()
+
+    @property
+    def model(self):
+        return self._pipeline.steps[-1][1]
+
+    @model.setter
+    def model(self, value):
+        self._pipeline.steps[-1] = ('model', value)
 
     @property
     def name(self):
@@ -56,33 +61,46 @@ class Model(object):
     def save(self, directory=DEFAULT_MODEL_DIRECTORY):
         raise NotImplementedError()
 
-    def train(self, X, y):
+    def train(self, X, y, **train_params):
         raise NotImplementedError()
+
+    def load_or_train(self, X, y, directory=DEFAULT_MODEL_DIRECTORY, **train_params):
+        try:
+            print("Loading model...")
+            self.load(directory)
+            print("Model '{}' loaded".format(self.filename))
+        except IOError:
+            print("Unable to load model, training...")
+            self.train(X, y, **train_params)
+            self.save(directory)
+            print("Model '{}' saved".format(self.filename))
+        return self
 
     def summary(self):
         raise NotImplementedError()
 
 
-class SpacyModel(Model):
+class SklearnModel(Model):
 
     def __init__(self, nlp, dataset_id, **model_params):
-        self.nlp = nlp
         super().__init__(dataset_id, **model_params)
+        self.nlp = nlp
+        self._pipeline = pipeline.Pipeline([
+            ('clear', transformers.ClearTextTransformer()),
+            ('nlp', transformers.NLPVectorTransformer(self.nlp)),
+            ('model', None)
+        ])
 
     @property
     def file_ext(self):
         return 'pkl'
 
-    @property
-    def model(self):
-        if self._pipeline is None:
-            raise RuntimeError("You must load model first!")
-        return self._pipeline.steps[-1][1]
-
-    def train(self, X, y):
-        pipe = self.get_pipeline()
-        fitted = pipe.fit(X, y)
-        self._pipeline = fitted
+    def train(self, X, y, preprocessed=False, **train_params):
+        self.model = self.create_model(**self.model_params)
+        if not preprocessed:
+            self.fit(X, y, **train_params)
+        else:
+            self.model.fit(X, y, **train_params)
         return self._pipeline
 
     def save(self, directory=DEFAULT_MODEL_DIRECTORY):
@@ -91,30 +109,37 @@ class SpacyModel(Model):
 
     def load(self, directory=DEFAULT_MODEL_DIRECTORY):
         filepath = os.path.join(directory, self.filename)
-        model = joblib.load(self.model, filepath)
-        self._pipeline = self.get_pipeline(model)
+        self.model = joblib.load(filepath)
         return self
 
     def summary(self):
-        return str(self.model)
+        return self.model
 
-    def get_pipeline(self, model=None):
-        return pipeline.Pipeline([
-            ('clear', transformers.ClearTextTransformer()),
-            ('nlp', transformers.NLPVectorTransformer(self.nlp)),
-            ('model', model or self.create_model())
-        ])
-
-    def create_model(self):
+    def create_model(self, **model_params):
         raise NotImplementedError()
 
     @classmethod
     def from_sklearn_model(cls, model_class):
         name = "Spacy{}Model".format(model_class.__name__)
-        return type(name, bases=(cls,), dict={
+        return type(name, (cls,), {
+            'NAME': model_class.__name__.lower(),
             'create_model': model_class,
-            'NAME': model_class.__name__.lower()
         })
+
+
+def _transform_identity(X, y=None):
+    return X
+
+
+DecisionTreeModel = SklearnModel.from_sklearn_model(DecisionTreeClassifier)
+MLPModel = SklearnModel.from_sklearn_model(MLPClassifier)
+GaussianNBModel = SklearnModel.from_sklearn_model(GaussianNB)
+AdaBoostModel = SklearnModel.from_sklearn_model(AdaBoostClassifier)
+RandomForestModel = SklearnModel.from_sklearn_model(RandomForestClassifier)
+GradientBoostingModel = SklearnModel.from_sklearn_model(GradientBoostingClassifier)
+QuadraticDiscriminantAnalysisModel = SklearnModel.from_sklearn_model(QuadraticDiscriminantAnalysis)
+LogisticRegressionModel = SklearnModel.from_sklearn_model(LogisticRegression)
+SVCModel = SklearnModel.from_sklearn_model(SVC)
 
 
 class KerasModel(Model):
@@ -125,59 +150,49 @@ class KerasModel(Model):
         model_params.setdefault('epochs', 20)
         model_params.setdefault('batch_size', 128)
         model_params.setdefault('max_words_in_sentence', 200)
+        super().__init__(dataset_id, **model_params)
         self.nlp = nlp
         self.max_words_in_sentence = model_params['max_words_in_sentence']
-        super().__init__(dataset_id, **model_params)
+        self._pipeline = pipeline.Pipeline([
+            ('clear', transformers.ClearTextTransformer()),
+            ('nlp_index', transformers.WordsToNlpIndexTransformer(self.nlp)),
+            ('model', None)
+        ])
 
     @property
     def file_ext(self):
         return 'h5'
 
-    @property
-    def model(self):
-        if self._pipeline is None:
-            raise RuntimeError("You must load model first!")
-        model_step = self._pipeline.steps[-1][1]
-        return model_step.model
-
     def load(self, directory=DEFAULT_MODEL_DIRECTORY):
         filepath = os.path.join(directory, self.filename)
-        model = load_model(filepath=filepath)
-        self._pipeline = self.get_pipeline(model)
+        model = self.create_model(**self.model_params)
+        model.model = load_model(filepath=filepath)
+        self.model = model
         return self
 
-    def train(self, X, y, train_indices=None, test_indices=None):
-        pipe = self.get_pipeline()
-        pipe.fit(X, y, keras__train_indices=train_indices, keras__test_indices=test_indices)
-        self._pipeline = pipe
-        model_step = pipe.steps[-1][1]
-        return model_step.history
+    def train(self, X, y, train_indices=None, test_indices=None, preprocessed=False):
+        self.model = self.create_model(**self.model_params)
+        if not preprocessed:
+            self.fit(X, y, model__train_indices=train_indices, model__test_indices=test_indices)
+        else:
+            self.model.fit(X, y, train_indices=train_indices, test_indices=test_indices)
+        return self._pipeline
 
     def save(self, directory=DEFAULT_MODEL_DIRECTORY):
         filepath = os.path.join(directory, self.filename)
-        save_model(self.model, filepath)
+        save_model(self.model.model, filepath)
 
-    def get_pipeline(self, model=None):
-        main_pipeline = [
-            ('clear', transformers.ClearTextTransformer()),
-            ('nlp_index', transformers.WordsToNlpIndexTransformer(self.nlp))
-        ]
-        batch_pipeline = [
-            ('nlp_input', transformers.NlpIndexToInputVectorTransformer(self.nlp, self.max_words_in_sentence))
-        ]
-
-        classifier = KerasBatchClassifier(
+    def create_model(self, **model_params):
+        return KerasBatchClassifier(
             build_fn=self._build_conv1d,
-            preprocess_pipeline=pipeline.Pipeline(batch_pipeline),
-            **self.model_params)
-
-        if model:
-            classifier.model = model
-
-        return pipeline.Pipeline(main_pipeline + [('keras', classifier)])
+            preprocess_pipeline=pipeline.Pipeline([
+                ('nlp_input', transformers.NlpIndexToInputVectorTransformer(
+                    self.nlp, self.max_words_in_sentence))
+            ]),
+            **model_params)
 
     def summary(self):
-        return self.model.summary()
+        return self.model.model.summary()
 
     @staticmethod
     def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=32, kernel_size=5, l2_weight=0.001,
