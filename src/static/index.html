@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Text Sentiment analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
+  <style>
+    body, html {
+      # background: linear-gradient(to bottom, #43cea2, #3d859f);
+      background-color: #86c4cd;
+      height: 100%;
+    }
+    .main-container {
+      background-color: #42939f;
+    }
+
+    .text {
+      color: #CAE99D !important;
+    }
+
+    hr {
+      color: #CAE99D;
+      border-color: #CAE99D;
+      background-color: #CAE99D;
+    }
+    .textarea, select {
+      background-color: #f9f7db !important;
+    }
+    .textarea {
+      height: 100%
+    }
+    .columns {
+      align-content: stretch;
+    }
+  </style>
+</head>
+<body>
+<section class="section" id="app">
+  <div class="container box main-container">
+    <h1 class="title has-text-centered text">
+      Sentiment analysis
+    </h1>
+    <div class="columns">
+      <div class="column">
+        <textarea class="textarea" v-model="text"></textarea>
+      </div>
+      <div class="column">
+        <div class="text">
+          <div v-if="!isTextValid">
+            Type <strong class="text">{{ missingWords }}</strong> more words to generate score...
+          </div>
+          <div v-else-if="isLoading">
+            <span class="fa fa-spinner fa-spin"></span>
+          </div>
+          <div v-else-if="error">
+            Error: {{ error }}
+          </div>
+          <div v-else-if="!score">
+            Stop typing to recalculate score...
+          </div>
+          <div v-else class="subtitle text">
+            Score: <strong>{{ score.toFixed(3) }}</strong>
+          </div>
+          <hr class="text">
+          <div v-if="models">
+            <div class="subtitle text">Choose model to use</div>
+            <div class="select is-rounded is-fullwidth">
+              <select v-model="selectedModel" class="select">
+                <option :value="key" v-for="(data, key) in models">{{ data.name }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+  var MIN_NUMBER_OF_WORDS = 5
+  var app = new Vue({
+    el: '#app',
+    data: {
+      text: '',
+      cancelToken: null,
+      error: null,
+      models: {
+        "Keras Food Reviews": {name: "1D Convolution NN"},
+        SVC: {name: "SVC"}
+      },
+      selectedModel: null,
+      score: null
+    },
+    created: function() {
+      this.getModels()
+    },
+    methods: {
+      getModels: function() {
+        var that = this
+        axios.get('/api/models')
+          .then(function (response) {
+            that.models = response.data
+            that.selectedModel = Object.keys(that.models)[0]
+          })
+      },
+      updateScore: _.debounce(function() {
+        this.error = null
+        var that = this
+        var data = {
+          text: this.text,
+          model: this.selectedModel
+        }
+        var CancelToken = axios.CancelToken;
+        var cancelToken = new CancelToken(function executor(c) {
+          // An executor function receives a cancel function as a parameter
+          that.cancelToken = c;
+        })
+        axios.post('/api/score', data, {cancelToken: cancelToken})
+          .then(function (response) {
+            that.score = response.data.score
+            that.cancelToken = null
+          })
+          .catch(function (error) {
+            console.log(error)
+            console.log(error.response)
+            that.error = error.response.statusText
+            that.cancelToken = null
+          })
+      }, 500)
+    },
+    computed: {
+      isLoading: function() {
+        return this.cancelToken !== null
+      },
+      numberOfWords: function() {
+        return this.text.split(' ').length
+      },
+      missingWords: function() {
+        return MIN_NUMBER_OF_WORDS - this.numberOfWords
+      },
+      isTextValid: function() {
+        return this.missingWords <= 0
+      }
+    },
+    watch: {
+      text: function(text) {
+        if(this.isTextValid) {
+          this.error =  null
+          this.score = null
+          this.updateScore()
+        }
+      },
+      selectedModel: function() {
+        this.updateScore()
+      }
+    }
+  })
+</script>
+</body>
+</html>

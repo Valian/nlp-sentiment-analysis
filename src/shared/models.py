@@ -120,7 +120,7 @@ class SklearnModel(Model):
 
     @classmethod
     def from_sklearn_model(cls, model_class):
-        name = "Spacy{}Model".format(model_class.__name__)
+        name = model_class.__name__.replace('Classifier', '') + 'Model'
         return type(name, (cls,), {
             'NAME': model_class.__name__.lower(),
             'create_model': model_class,

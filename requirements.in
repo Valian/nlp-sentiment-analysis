@@ -9,5 +9,6 @@ pytest
 spacy
 flask
 gunicorn
+xgboost
 
 # tensorflow are installed in dockerfile to utilize caching

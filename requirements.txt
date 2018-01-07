@@ -27,7 +27,7 @@ msgpack-numpy==0.4.1      # via spacy, thinc
 msgpack-python==0.4.8     # via msgpack-numpy, spacy, thinc
 murmurhash==0.28.0        # via spacy, thinc
 numexpr==2.6.4            # via tables
-numpy==1.13.3             # via h5py, keras, matplotlib, msgpack-numpy, numexpr, pandas, scipy, sklearn-pandas, spacy, tables, thinc
+numpy==1.13.3             # via h5py, keras, matplotlib, msgpack-numpy, numexpr, pandas, scipy, sklearn-pandas, spacy, tables, thinc, xgboost
 pandas==0.21.1
 pathlib==1.0.1            # via spacy, thinc
 plac==0.9.6               # via spacy, thinc
@@ -42,7 +42,7 @@ pyyaml==3.12              # via keras
 regex==2017.4.5           # via spacy
 requests==2.18.4          # via spacy
 scikit-learn==0.19.1
-scipy==1.0.0              # via keras, sklearn-pandas
+scipy==1.0.0              # via keras, sklearn-pandas, xgboost
 six==1.11.0               # via cycler, h5py, html5lib, keras, matplotlib, pytest, python-dateutil, spacy, tables, thinc
 sklearn-pandas==1.6.0
 spacy==2.0.5
@@ -57,3 +57,4 @@ wcwidth==0.1.7            # via ftfy
 webencodings==0.5.1       # via html5lib
 werkzeug==0.14.1          # via flask
 wrapt==1.10.11            # via thinc
+xgboost==0.7.post3
