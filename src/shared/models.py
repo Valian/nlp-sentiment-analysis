@@ -12,6 +12,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
 
 from shared import transformers
 from shared.common import get_hash_of_dict
@@ -140,6 +141,27 @@ GradientBoostingModel = SklearnModel.from_sklearn_model(GradientBoostingClassifi
 QuadraticDiscriminantAnalysisModel = SklearnModel.from_sklearn_model(QuadraticDiscriminantAnalysis)
 LogisticRegressionModel = SklearnModel.from_sklearn_model(LogisticRegression)
 SVCModel = SklearnModel.from_sklearn_model(SVC)
+XGBModel = SklearnModel.from_sklearn_model(XGBClassifier)
+
+
+class XGBoostModelTest(Model):
+
+    @property
+    def file_ext(self):
+        return 'model'
+
+    def save(self, directory=DEFAULT_MODEL_DIRECTORY):
+        filepath = os.path.join(directory, self.filename)
+        self.model.save(filepath)
+
+    def summary(self):
+        pass
+
+    def train(self, X, y, **train_params):
+        pass
+
+    def load(self, directory=DEFAULT_MODEL_DIRECTORY):
+        pass
 
 
 class KerasModel(Model):
