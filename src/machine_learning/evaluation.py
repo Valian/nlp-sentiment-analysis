@@ -1,7 +1,7 @@
 import pandas as pd
 from IPython.core.display import display_markdown, display
 
-from machine_learning.plot_helpers import plot_confusion_matrix, pandas_settings
+from machine_learning.plot_helpers import plot_confusion_matrix, pandas_settings, plot_roc_curve 
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.preprocessing import binarize
 
@@ -36,4 +36,5 @@ def evaluate_and_report(model, X_test, y_test, show_top_n=5):
     classes = ['Negative', 'Positive']
     print(classification_report(y_test, y_pred, target_names=classes))
     plot_confusion_matrix(confusion_matrix(y_test, y_pred), classes)
+    plot_roc_curve(y_test, y_pred_proba)
     return accuracy_score(y_test, y_pred)

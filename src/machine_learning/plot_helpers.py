@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from IPython.core.display import display_markdown, display
 
+from sklearn import metrics
+
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -34,6 +36,7 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+    plt.show()
 
 
 def plot_training(history):
@@ -80,6 +83,22 @@ def describe_data(X, y):
     display_markdown('#### Labels counts', raw=True)
     display(data.y.value_counts())
     display(data.y.value_counts(normalize=True))
+    
+
+def plot_roc_curve(y_test, y_prob):    
+    # calculate the fpr and tpr for all thresholds of the classification
+    fpr, tpr, threshold = metrics.roc_curve(y_test, y_prob)
+    roc_auc = metrics.auc(fpr, tpr)
+
+    plt.title('Receiver Operating Characteristic')
+    plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+    plt.legend(loc = 'lower right')
+    plt.plot([0, 1], [0, 1],'r--')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.show()
 
 
 def display_example_predictions(model, samples):
