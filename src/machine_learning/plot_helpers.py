@@ -7,6 +7,7 @@ import pandas as pd
 from IPython.core.display import display_markdown, display
 
 from sklearn import metrics
+from spacy.lang.en import STOP_WORDS
 
 
 def plot_confusion_matrix(cm, classes,
@@ -65,7 +66,7 @@ def pandas_settings(**settings):
     return decorator
 
 
-def describe_data(X, y):
+def describe_data(X, y, top_words=20):
     data = pd.DataFrame({'X': pd.Series(X), 'y': pd.Series(y[:, 0])})
 
     display_markdown("### Data sample", raw=True)
@@ -76,6 +77,12 @@ def describe_data(X, y):
 
     display_markdown('#### Words length stats', raw=True)
     display(data.X.apply(lambda w: len(w.split())).describe())
+
+    stop_words = {"it's", "don't", "-", "/><br", "i'm", "i've", "it."}
+    stop_words.update(STOP_WORDS)
+    words = pd.Series(w for w in ' '.join(data.X).lower().split() if w not in stop_words)
+    display_markdown('#### Most frequent words', raw=True)
+    display(words.value_counts()[:top_words])
 
     display_markdown('#### Labels stats', raw=True)
     display(data.y.describe())
