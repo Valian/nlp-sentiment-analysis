@@ -37,4 +37,5 @@ def evaluate_and_report(model, X_test, y_test, show_top_n=5):
     print(classification_report(y_test, y_pred, target_names=classes))
     plot_confusion_matrix(confusion_matrix(y_test, y_pred), classes)
     plot_roc_curve(y_test, y_pred_proba)
-    return accuracy_score(y_test, y_pred)
+    score = accuracy_score(y_test, y_pred)
+    return score, y_pred_proba

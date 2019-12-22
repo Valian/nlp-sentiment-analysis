@@ -19,8 +19,9 @@ class Store(object):
             self.configuration = json.load(f)
 
     def save(self):
+        v = json.dumps(self.configuration, indent=2)
         with open(self.config_filepath, 'w') as f:
-            json.dump(self.configuration, f)
+            f.write(v)
 
     def add_model(self, model, key, name, metadata=None):
         self.load()
