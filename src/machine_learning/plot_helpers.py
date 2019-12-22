@@ -62,7 +62,9 @@ def pandas_settings(**settings):
             finally:
                 for k, v in prev_settings.items():
                     pd.set_option(k, v)
+
         return inner
+
     return decorator
 
 
@@ -90,17 +92,17 @@ def describe_data(X, y, top_words=20):
     display_markdown('#### Labels counts', raw=True)
     display(data.y.value_counts())
     display(data.y.value_counts(normalize=True))
-    
 
-def plot_roc_curve(y_test, y_prob):    
+
+def plot_roc_curve(y_test, y_prob):
     # calculate the fpr and tpr for all thresholds of the classification
     fpr, tpr, threshold = metrics.roc_curve(y_test, y_prob)
     roc_auc = metrics.auc(fpr, tpr)
 
     plt.title('Receiver Operating Characteristic')
-    plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
-    plt.legend(loc = 'lower right')
-    plt.plot([0, 1], [0, 1],'r--')
+    plt.plot(fpr, tpr, 'b', label='TEST AUC = %0.2f' % roc_auc)
+    plt.legend(loc='lower right')
+    plt.plot([0, 1], [0, 1], 'r--')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
     plt.ylabel('True Positive Rate')

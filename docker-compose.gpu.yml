@@ -1,9 +1,10 @@
-version: '2'
+version: '2.3'
 services:
   notebook:
     build:
       context: .
       dockerfile: Dockerfile-gpu
+    runtime: nvidia
     volumes:
       - .:/srv
       - ./spacy:/usr/local/lib/python3.5/dist-packages/en_vectors_web_lg
@@ -14,6 +15,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-gpu
+    runtime: nvidia
     volumes:
       - .:/srv
       - ./spacy:/usr/local/lib/python3.5/dist-packages/en_vectors_web_lg

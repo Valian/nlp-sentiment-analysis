@@ -12,7 +12,7 @@ RUN apt-get update \
 
 WORKDIR /srv
 
-RUN pip install jupyter && \
+RUN pip install --no-cache-dir  jupyter && \
     mkdir -p -m 700 /root/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> /root/.jupyter/jupyter_notebook_config.py && \
     echo "c.NotebookApp.token = ''" >> /root/.jupyter/jupyter_notebook_config.py
