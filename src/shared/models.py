@@ -164,12 +164,10 @@ class XGBoostModelTest(Model):
         pass
 
 
-class KerasModel(Model):
-
-    NAME = 'keras'
+class KerasModelBase(Model):
 
     def __init__(self, nlp, dataset_id, **model_params):
-        model_params.setdefault('epochs', 20)
+        model_params.setdefault('epochs', 30)
         model_params.setdefault('batch_size', 128)
         model_params.setdefault('max_words_in_sentence', 200)
         super().__init__(dataset_id, **model_params)
@@ -216,6 +214,11 @@ class KerasModel(Model):
     def summary(self):
         return self.model.model.summary()
 
+
+class KerasModel(KerasModelBase):
+
+    NAME = 'keras'
+
     @staticmethod
     def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=32, kernel_size=5, l2_weight=0.001,
                      dropout_rate=0.7):
@@ -232,6 +235,75 @@ class KerasModel(Model):
             BatchNormalization(),
             Dropout(dropout_rate),
             Dense(1, kernel_regularizer=l2(l2_weight), activation='sigmoid'),
+        ])
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+        return model
+
+
+class KerasExperimentalModel(KerasModelBase):
+    NAME = 'keras_experimental'
+
+    @staticmethod
+    def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=32, kernel_size=5, l2_weight=0.001,
+                      dropout_rate=0.3):
+        model = Sequential([
+            Conv1D(
+                4 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                input_shape=(max_words_in_sentence, embedding_dim), padding='valid', activation='relu'),
+            MaxPooling1D(kernel_size),
+            BatchNormalization(),
+            Conv1D(
+                2 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                padding='valid', activation='relu'),
+            MaxPooling1D(kernel_size),
+            BatchNormalization(),
+            Conv1D(
+                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                padding='valid', activation='relu'),
+            GlobalMaxPooling1D(),
+            BatchNormalization(),
+            Dropout(dropout_rate),
+            Dense(10, activation='relu'),
+            Dense(1, kernel_regularizer=l2(l2_weight), activation='sigmoid'),
+        ])
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+        return model
+
+
+class KerasDeepModel(KerasModelBase):
+    NAME = 'keras_deep'
+
+    @staticmethod
+    def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=16, kernel_size=3, l2_weight=0.001,
+                      dropout_rate=0.7):
+        model = Sequential([
+            Conv1D(
+                4 * filters, kernel_size * 2 + 1, strides=1, kernel_regularizer=l2(l2_weight),
+                input_shape=(max_words_in_sentence, embedding_dim), padding='valid', activation='relu'),
+            MaxPooling1D(2),
+            BatchNormalization(),
+            Conv1D(
+                2 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                padding='valid', activation='relu'),
+            MaxPooling1D(2),
+            BatchNormalization(),
+            Conv1D(
+                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                padding='valid', activation='relu'),
+            MaxPooling1D(2),
+            BatchNormalization(),
+            Conv1D(
+                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                padding='valid', activation='relu'),
+            MaxPooling1D(2),
+            BatchNormalization(),
+            Conv1D(
+                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                padding='valid', activation='relu'),
+            GlobalMaxPooling1D(),
+            BatchNormalization(),
+            Dense(10, activation='relu'),
+            Dense(1, activation='sigmoid'),
         ])
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
         return model

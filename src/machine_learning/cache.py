@@ -5,8 +5,8 @@ import h5py
 CACHE_PATH = '../dist/data'
 
 
-def get_preprocessed_data(model, dataset_id, X):
-    filename = '{}_{}.h5'.format(model.__class__.__name__.lower(), dataset_id)
+def get_preprocessed_data(model, dataset_id, X, filename=None):
+    filename = filename or '{}_{}.h5'.format(model.__class__.__name__.lower(), dataset_id)
     path = os.path.join(CACHE_PATH, filename)
     try:
         print("Loading cached data...")
