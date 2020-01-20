@@ -1,6 +1,6 @@
 import os
 
-from keras.layers import Dense, Conv1D, BatchNormalization, GlobalMaxPooling1D, Dropout, MaxPooling1D
+from keras.layers import Dense, Conv1D, BatchNormalization, GlobalMaxPooling1D, Dropout, MaxPooling1D, GlobalAveragePooling1D
 from keras.models import Sequential, load_model, save_model
 from keras.regularizers import l2
 from sklearn import pipeline
@@ -178,6 +178,7 @@ class KerasModelBase(Model):
             ('nlp_index', transformers.WordsToNlpIndexTransformer(self.nlp)),
             ('model', None)
         ])
+        self.model = self.create_model(**self.model_params)
 
     @property
     def file_ext(self):
@@ -191,7 +192,6 @@ class KerasModelBase(Model):
         return self
 
     def train(self, X, y, train_indices=None, test_indices=None, preprocessed=False):
-        self.model = self.create_model(**self.model_params)
         if not preprocessed:
             self.fit(X, y, model__train_indices=train_indices, model__test_indices=test_indices)
         else:
@@ -203,13 +203,15 @@ class KerasModelBase(Model):
         save_model(self.model.model, filepath)
 
     def create_model(self, **model_params):
-        return KerasBatchClassifier(
+        classifier = KerasBatchClassifier(
             build_fn=self._build_conv1d,
             preprocess_pipeline=pipeline.Pipeline([
                 ('nlp_input', transformers.NlpIndexToInputVectorTransformer(
                     self.nlp, self.max_words_in_sentence))
             ]),
             **model_params)
+        classifier.model = self._build_conv1d(**classifier.filter_sk_params(self._build_conv1d))
+        return classifier
 
     def summary(self):
         return self.model.model.summary()
@@ -225,12 +227,12 @@ class KerasModel(KerasModelBase):
         model = Sequential([
             Conv1D(
                 filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                input_shape=(max_words_in_sentence, embedding_dim), padding='valid', activation='relu'),
+                input_shape=(max_words_in_sentence, embedding_dim), activation='relu'),
             MaxPooling1D(5),
             BatchNormalization(),
             Conv1D(
                 2 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                input_shape=(max_words_in_sentence, embedding_dim), padding='valid', activation='relu'),
+                input_shape=(max_words_in_sentence, embedding_dim), activation='relu'),
             GlobalMaxPooling1D(),
             BatchNormalization(),
             Dropout(dropout_rate),
@@ -244,26 +246,22 @@ class KerasExperimentalModel(KerasModelBase):
     NAME = 'keras_experimental'
 
     @staticmethod
-    def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=32, kernel_size=5, l2_weight=0.001,
+    def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=16, kernel_size=3, l2_weight=0.001,
                       dropout_rate=0.3):
         model = Sequential([
             Conv1D(
-                4 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                input_shape=(max_words_in_sentence, embedding_dim), padding='valid', activation='relu'),
-            MaxPooling1D(kernel_size),
-            BatchNormalization(),
-            Conv1D(
-                2 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                padding='valid', activation='relu'),
-            MaxPooling1D(kernel_size),
-            BatchNormalization(),
-            Conv1D(
-                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                padding='valid', activation='relu'),
-            GlobalMaxPooling1D(),
-            BatchNormalization(),
-            Dropout(dropout_rate),
-            Dense(10, activation='relu'),
+                4 * filters, kernel_size, strides=1,
+                input_shape=(max_words_in_sentence, embedding_dim), activation='relu'
+            ),
+            Conv1D(4 * filters, kernel_size, strides=1, activation='relu'),
+            Conv1D(4 * filters, kernel_size, strides=1, activation='relu'),
+            MaxPooling1D(2),
+            Conv1D(4 * filters, kernel_size, strides=1, activation='relu'),
+            Conv1D(4 * filters, kernel_size, strides=1, activation='relu'),
+            Conv1D(4 * filters, kernel_size, strides=1, activation='relu'),
+            GlobalAveragePooling1D(),
+            Dense(50, activation='relu'),
+            Dense(50, activation='relu'),
             Dense(1, kernel_regularizer=l2(l2_weight), activation='sigmoid'),
         ])
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
@@ -279,30 +277,32 @@ class KerasDeepModel(KerasModelBase):
         model = Sequential([
             Conv1D(
                 4 * filters, kernel_size * 2 + 1, strides=1, kernel_regularizer=l2(l2_weight),
-                input_shape=(max_words_in_sentence, embedding_dim), padding='valid', activation='relu'),
+                input_shape=(max_words_in_sentence, embedding_dim), activation='relu'),
             MaxPooling1D(2),
             BatchNormalization(),
             Conv1D(
-                2 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                padding='valid', activation='relu'),
+                64 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                activation='relu'),
             MaxPooling1D(2),
             BatchNormalization(),
             Conv1D(
-                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                padding='valid', activation='relu'),
+                32 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                activation='relu'),
             MaxPooling1D(2),
             BatchNormalization(),
             Conv1D(
-                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                padding='valid', activation='relu'),
+                16 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                activation='relu'),
             MaxPooling1D(2),
             BatchNormalization(),
             Conv1D(
-                filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
-                padding='valid', activation='relu'),
+                8 * filters, kernel_size, strides=1, kernel_regularizer=l2(l2_weight),
+                activation='relu'),
             GlobalMaxPooling1D(),
             BatchNormalization(),
-            Dense(10, activation='relu'),
+            Dropout(dropout_rate),
+            Dense(50, activation='relu'),
+            Dense(50, activation='relu'),
             Dense(1, activation='sigmoid'),
         ])
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
