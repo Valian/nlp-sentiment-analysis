@@ -35,11 +35,16 @@ class ClearTextTransformer(RowTransformer):
     remove_html = re.compile(r"<[^>]*>")
     unwanted_characters = re.compile(r"[^\w+ !?']")
     merge_whitespaces = re.compile(r"\s\s+")
+
+    def __init__(self, max_words_in_sentence=None):
+        self.max_words_in_sentence = max_words_in_sentence
     
     def transform_value(self, value):
         value = self.remove_html.sub(' ', value)
         value = self.unwanted_characters.sub(' ', value)
         value = self.merge_whitespaces.sub(' ', value)
+        if self.max_words_in_sentence:
+            value = ' '.join(value.split()[:self.max_words_in_sentence])
         return value.lower()
 
 

@@ -23,14 +23,15 @@ class Store(object):
         with open(self.config_filepath, 'w') as f:
             f.write(v)
 
-    def add_model(self, model, key, name, metadata=None):
+    def add_model(self, model, key, name, metadata=None, **kwargs):
         self.load()
         self.configuration[key] = {
             "name": name,
             "dataset_id": model.dataset_id,
             "class_name": model.__class__.__name__,
             "metadata": metadata or {},
-            "model_params": model.model_params
+            "model_params": model.model_params,
+            **kwargs
         }
         self.save()
 
@@ -43,6 +44,7 @@ class Store(object):
     def get_model(self, name):
         cfg = self.configuration[name]
         model_class = getattr(models, cfg['class_name'])
+        cfg['model_params'].setdefault('max_words_in_sentence', 200)
         model = model_class(self.nlp, cfg['dataset_id'], **cfg['model_params'])
         model.load()
         return model

@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import h5py
 
 CACHE_PATH = '../dist/data'
@@ -11,7 +12,7 @@ def get_preprocessed_data(model, dataset_id, X, filename=None):
     try:
         print("Loading cached data...")
         with h5py.File(path, 'r') as hf:
-            preprocessed = hf['X'][:]
+            preprocessed = np.array(hf['X'])
         print("Loaded data from '{}'".format(filename))
     except:
         print("Unable to load data, preprocessing...")

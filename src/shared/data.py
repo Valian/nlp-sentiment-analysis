@@ -15,10 +15,14 @@ def load_fine_food_reviews(limit=-1, text_column='Summary'):
     if limit > 0:
         query += " LIMIT {}".format(limit)
     data = pd.read_sql_query(query, connection)
-    
-    text, scores = data.text.values, data[['scores']].values
-    scores = Binarizer(threshold=3.0).transform(scores)
-    return text, scores
+    data['class'] = Binarizer(threshold=3.0).transform(data[['scores']])
+    positive = data[data['class'] == 1]
+    negative = data[data['class'] == 0]
+    class_count = min(len(negative), len(positive))
+    negative_sample = negative.sample(class_count, random_state=42)
+    positive_sample = positive.sample(class_count, random_state=42)
+    normalized_data = pd.concat([negative_sample, positive_sample])
+    return normalized_data['text'].values, normalized_data[['class']].values
 
 
 def load_imdb(path, limit=-1):
