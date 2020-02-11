@@ -112,7 +112,7 @@ def display_example_predictions(model, samples):
     display_markdown("#### Predicted scores", raw=True)
 
     if not isinstance(samples, np.ndarray):
-        samples = np.array(samples, dtype='object')
+        samples = np.array([str(s) for s in samples], dtype='object')
 
     with pd.option_context("display.max_colwidth", -1):
         display(pd.DataFrame({

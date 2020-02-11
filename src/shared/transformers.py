@@ -29,9 +29,6 @@ class RowTransformer(BaseTransformer):
     
 
 class ClearTextTransformer(RowTransformer):
-
-    OVERRIDE_ARRAY_TYPE = 'object'
-
     remove_html = re.compile(r"<[^>]*>")
     unwanted_characters = re.compile(r"[^\w+ !?']")
     merge_whitespaces = re.compile(r"\s\s+")
@@ -54,7 +51,7 @@ class NLPVectorTransformer(RowTransformer):
         self.nlp = nlp
 
     def transform_value(self, value):
-        return self.nlp(value).vector
+        return self.nlp(str(value)).vector
 
 
 class WordsToNlpIndexTransformer(RowTransformer):
