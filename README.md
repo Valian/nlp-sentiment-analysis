@@ -50,22 +50,17 @@ nvidia-docker-compose up
 
 ```
 
-# Citations
+After opening `localhost:8888`, there should be a file browser allowing to run `Jupyter Notebooks`.
 
-<hr>
+# Repository structure
 
-@InProceedings{maas-EtAl:2011:ACL-HLT2011,
-  author    = {Maas, Andrew L.  and  Daly, Raymond E.  and  Pham, Peter T.  and  Huang, Dan  and  Ng, Andrew Y.  and  Potts, Christopher},
-  title     = {Learning Word Vectors for Sentiment Analysis},
-  booktitle = {Proceedings of the 49th Annual Meeting of the Association for Computational Linguistics: Human Language Technologies},
-  month     = {June},
-  year      = {2011},
-  address   = {Portland, Oregon, USA},
-  publisher = {Association for Computational Linguistics},
-  pages     = {142--150},
-  url       = {http://www.aclweb.org/anthology/P11-1015}
-}
+Notebooks used for testing: 
 
-<hr>
+1. IMDB Reviews models generation and results: `src/text_sentiment_analysis_food.ipynb`
+2. Amazon Fine Food Reviews models generation and results: `src/text_sentiment_analysis_imdb.ipynb`
+3. Results comparision: `src/results_comparision.ipynb`
 
-J. McAuley and J. Leskovec. From amateurs to connoisseurs: modeling the evolution of user expertise through online reviews. WWW, 2013.
+Web application code is in `src/app.py`. 
+
+There is a quite large code base shared between notebooks and application, available inside `src/shared` directory.
+Model definitions can be found in `src/shared/models.py`. 

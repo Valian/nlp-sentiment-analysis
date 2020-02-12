@@ -265,28 +265,6 @@ class KerasExperimentalModel(KerasModelBase):
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
         return model
 
-    # @staticmethod
-    # def _build_conv1d(max_words_in_sentence=200, embedding_dim=300, filters=16, kernel_size=3, l2_weight=0.001,
-    #                   dropout_rate=0.3):
-    #     model = Sequential([
-    #         Conv1D(
-    #             4 * filters, kernel_size,
-    #             input_shape=(max_words_in_sentence, embedding_dim), activation='relu'
-    #         ),
-    #         Conv1D(4 * filters, kernel_size, activation='relu'),
-    #         Conv1D(4 * filters, kernel_size, activation='relu'),
-    #         MaxPooling1D(2),
-    #         Conv1D(4 * filters, kernel_size, activation='relu'),
-    #         Conv1D(4 * filters, kernel_size, activation='relu'),
-    #         Conv1D(4 * filters, kernel_size, activation='relu'),
-    #         GlobalAveragePooling1D(),
-    #         Dense(50, activation='relu'),
-    #         Dense(50, activation='relu'),
-    #         Dense(1, kernel_regularizer=l2(l2_weight), activation='sigmoid'),
-    #     ])
-    #     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
-    #     return model
-
 
 class KerasDeepModel(KerasModelBase):
     NAME = 'keras_deep'
@@ -298,19 +276,14 @@ class KerasDeepModel(KerasModelBase):
         model = Sequential([
             Conv1D(6 * filters, kernel_size, activation='relu', input_shape=input_shape),
             MaxPooling1D(2),
-            Dropout(dropout_rate),
             Conv1D(6 * filters, kernel_size, activation='relu'),
             MaxPooling1D(2),
-            Dropout(dropout_rate),
             Conv1D(6 * filters, kernel_size, activation='relu'),
             MaxPooling1D(2),
-            Dropout(dropout_rate),
             Conv1D(6 * filters, kernel_size, activation='relu'),
             MaxPooling1D(2),
-            Dropout(dropout_rate),
             Conv1D(6 * filters, kernel_size, activation='relu'),
             MaxPooling1D(2),
-            Dropout(dropout_rate),
             Conv1D(6 * filters, kernel_size, activation='relu'),
             GlobalAveragePooling1D(),
             Dropout(dropout_rate),
