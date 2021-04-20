@@ -4,57 +4,168 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
-attrs==17.3.0             # via pytest
-certifi==2017.11.5        # via requests
-chardet==3.0.4            # via requests
-click==6.7                # via flask
-cycler==0.10.0            # via matplotlib
-cymem==1.31.2             # via preshed, spacy, thinc
-cytoolz==0.8.2            # via thinc
-dill==0.2.7.1             # via spacy, thinc
+attrs==17.3.0
+    # via pytest
+backports.functools-lru-cache==1.6.4
+    # via matplotlib
+certifi==2017.11.5
+    # via requests
+chardet==3.0.4
+    # via requests
+click==6.7
+    # via flask
+cycler==0.10.0
+    # via matplotlib
+cymem==1.31.2
+    # via
+    #   preshed
+    #   spacy
+    #   thinc
+cytoolz==0.8.2
+    # via thinc
+dill==0.2.7.1
+    # via
+    #   spacy
+    #   thinc
 flask==0.12.2
-ftfy==4.4.3               # via spacy
+    # via -r requirements.in
+ftfy==4.4.3
+    # via spacy
+funcsigs==1.0.2
+    # via pytest
 gunicorn==19.7.1
+    # via -r requirements.in
 h5py==2.7.1
-html5lib==1.0.1           # via ftfy
-idna==2.6                 # via requests
-itsdangerous==0.24        # via flask
-jinja2==2.10              # via flask
+    # via -r requirements.in
+html5lib==1.0.1
+    # via ftfy
+idna==2.6
+    # via requests
+itsdangerous==0.24
+    # via flask
+jinja2==2.10
+    # via flask
 keras==2.1.2
-markupsafe==1.0           # via jinja2
+    # via -r requirements.in
+markupsafe==1.0
+    # via jinja2
 matplotlib==2.1.1
-msgpack-numpy==0.4.1      # via spacy, thinc
-msgpack-python==0.4.8     # via msgpack-numpy, spacy, thinc
-murmurhash==0.28.0        # via spacy, thinc
-numexpr==2.6.4            # via tables
-numpy==1.13.3             # via h5py, keras, matplotlib, msgpack-numpy, numexpr, pandas, scipy, sklearn-pandas, spacy, tables, thinc, xgboost
+    # via -r requirements.in
+msgpack-numpy==0.4.1
+    # via
+    #   spacy
+    #   thinc
+msgpack-python==0.4.8
+    # via
+    #   msgpack-numpy
+    #   spacy
+    #   thinc
+murmurhash==0.28.0
+    # via
+    #   spacy
+    #   thinc
+numexpr==2.6.4
+    # via tables
+numpy==1.13.3
+    # via
+    #   h5py
+    #   keras
+    #   matplotlib
+    #   msgpack-numpy
+    #   numexpr
+    #   pandas
+    #   scipy
+    #   sklearn-pandas
+    #   spacy
+    #   tables
+    #   thinc
+    #   xgboost
 pandas==0.21.1
-pathlib==1.0.1            # via spacy, thinc
-plac==0.9.6               # via spacy, thinc
-pluggy==0.6.0             # via pytest
-preshed==1.0.0            # via spacy, thinc
-py==1.5.2                 # via pytest
-pyparsing==2.2.0          # via matplotlib
+    # via
+    #   -r requirements.in
+    #   sklearn-pandas
+pathlib==1.0.1
+    # via
+    #   spacy
+    #   thinc
+plac==0.9.6
+    # via
+    #   spacy
+    #   thinc
+pluggy==0.6.0
+    # via pytest
+preshed==1.0.0
+    # via
+    #   spacy
+    #   thinc
+py==1.10.0
+    # via pytest
+pyparsing==2.2.0
+    # via matplotlib
 pytest==3.3.1
-python-dateutil==2.6.1    # via matplotlib, pandas
-pytz==2017.3              # via matplotlib, pandas
-pyyaml==3.12              # via keras
-regex==2017.4.5           # via spacy
-requests==2.18.4          # via spacy
+    # via -r requirements.in
+python-dateutil==2.6.1
+    # via
+    #   matplotlib
+    #   pandas
+pytz==2017.3
+    # via
+    #   matplotlib
+    #   pandas
+pyyaml==3.12
+    # via keras
+regex==2017.4.5
+    # via spacy
+requests==2.18.4
+    # via spacy
 scikit-learn==0.19.1
-scipy==1.0.0              # via keras, sklearn-pandas, xgboost
-six==1.11.0               # via cycler, h5py, html5lib, keras, matplotlib, pytest, python-dateutil, spacy, tables, thinc
+    # via
+    #   -r requirements.in
+    #   sklearn-pandas
+scipy==1.0.0
+    # via
+    #   keras
+    #   sklearn-pandas
+    #   xgboost
+six==1.11.0
+    # via
+    #   cycler
+    #   h5py
+    #   html5lib
+    #   keras
+    #   matplotlib
+    #   pytest
+    #   python-dateutil
+    #   spacy
+    #   tables
+    #   thinc
 sklearn-pandas==1.6.0
+    # via -r requirements.in
 spacy==2.0.5
+    # via -r requirements.in
+subprocess32==3.5.4
+    # via matplotlib
 tables==3.4.2
-termcolor==1.1.0          # via thinc
-thinc==6.10.2             # via spacy
-toolz==0.9.0              # via cytoolz
-tqdm==4.19.5              # via thinc
-ujson==1.35               # via spacy
-urllib3==1.22             # via requests
-wcwidth==0.1.7            # via ftfy
-webencodings==0.5.1       # via html5lib
-werkzeug==0.14.1          # via flask
-wrapt==1.10.11            # via thinc
+    # via -r requirements.in
+termcolor==1.1.0
+    # via thinc
+thinc==6.10.2
+    # via spacy
+toolz==0.9.0
+    # via cytoolz
+tqdm==4.19.5
+    # via thinc
+ujson==1.35
+    # via spacy
+urllib3==1.22
+    # via requests
+wcwidth==0.1.7
+    # via ftfy
+webencodings==0.5.1
+    # via html5lib
+werkzeug==0.14.1
+    # via flask
+wrapt==1.10.11
+    # via thinc
 xgboost==0.7.post3
+    # via -r requirements.in
